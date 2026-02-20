@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EngineeringOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --surface-raised: #ffffff;
+    --border: #e5e7eb;
+    --border-subtle: #f0f0f0;
+    --text: #111827;
+    --text-secondary: #6b7280;
+    --text-tertiary: #9ca3af;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --accent-subtle: #dbeafe;
+    --green: #059669;
+    --green-bg: #ecfdf5;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --yellow: #d97706;
+    --yellow-bg: #fffbeb;
+    --orange: #ea580c;
+    --orange-bg: #fff7ed;
+    --purple: #7c3aed;
+    --purple-bg: #f5f3ff;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 2px 8px rgba(0,0,0,0.06);
+    --shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
+    --radius: 10px;
+    --radius-sm: 6px;
+    --radius-lg: 14px;
+    --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono: 'JetBrains Mono', 'SF Mono', monospace;
+    --transition: 150ms ease;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Header ── */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 56px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--accent);
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo-icon svg { width: 16px; height: 16px; }
+  .logo h1 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+  }
+  .logo .version {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+    margin-left: 4px;
+  }
+  .header-actions { display: flex; gap: 6px; }
+  .btn {
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+  .btn.danger:hover { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+
+  /* ── Main Layout ── */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Left: Chat-like interaction panel ── */
+  .left-panel {
+    width: 440px;
+    min-width: 380px;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+  }
+
+  /* Agent panel (scrollable) */
+  .agent-feed {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .agent-feed:empty::before {
+    content: '';
+  }
+
+  /* Welcome state */
+  .welcome-card {
+    background: linear-gradient(135deg, var(--accent-light) 0%, var(--purple-bg) 100%);
+    border: 1px solid var(--accent-subtle);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+  }
+  .welcome-card h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .welcome-card p {
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+  }
+  .welcome-card .hints {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .hint-chip {
+    font-size: 12px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.7);
+    border: 1px solid rgba(37,99,235,0.15);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all var(--transition);
+    text-align: left;
+  }
+  .hint-chip:hover {
+    background: white;
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* User message bubble */
+  .msg-user {
+    align-self: flex-end;
+    max-width: 85%;
+    background: var(--accent);
+    color: white;
+    padding: 10px 14px;
+    border-radius: var(--radius) var(--radius) 4px var(--radius);
+    font-size: 13.5px;
+    line-height: 1.5;
+  }
+
+  /* Agent response card */
+  .agent-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+  }
+  .agent-card-header {
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .agent-avatar {
+    width: 22px;
+    height: 22px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .agent-avatar svg { width: 12px; height: 12px; }
+  .agent-card-header span {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .agent-card-header .label {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: auto;
+  }
+  .label-updated { background: var(--green-bg); color: var(--green); }
+  .label-conflict { background: var(--red-bg); color: var(--red); }
+
+  .agent-card-body { padding: 14px 16px; }
+  .agent-card-body .summary {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: var(--text);
+    margin-bottom: 12px;
+  }
+
+  /* Completeness bar */
+  .completeness {
+    margin-bottom: 14px;
+  }
+  .completeness-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-bottom: 5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .completeness-bar {
+    height: 6px;
+    background: var(--bg);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .completeness-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: var(--accent);
+    transition: width 0.5s ease;
+  }
+
+  /* Questions section */
+  .questions-section {
+    margin-top: 12px;
+  }
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+  }
+  .question-item {
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--yellow-bg);
+    border: 1px solid #fde68a;
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .question-item:hover {
+    border-color: var(--yellow);
+    box-shadow: var(--shadow-sm);
+  }
+  .question-priority {
+    flex-shrink: 0;
+    width: 6px;
+    border-radius: 3px;
+    margin: 2px 0;
+  }
+  .priority-high { background: var(--red); }
+  .priority-medium { background: var(--yellow); }
+  .priority-low { background: var(--text-tertiary); }
+  .question-content {
+    flex: 1;
+  }
+  .question-content .q-text {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+    font-weight: 500;
+  }
+  .question-content .q-context {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    margin-top: 3px;
+    line-height: 1.4;
+  }
+
+  /* Suggestions */
+  .suggestion-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--accent-light);
+    border: 1px solid var(--accent-subtle);
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--accent);
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .suggestion-item:hover {
+    background: var(--accent-subtle);
+    border-color: var(--accent);
+  }
+  .suggestion-item::before {
+    content: '→';
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  /* Conflicts */
+  .conflict-item {
+    padding: 10px 12px;
+    background: var(--red-bg);
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+  }
+  .conflict-item .conflict-desc {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--red);
+    margin-bottom: 4px;
+  }
+  .conflict-item .conflict-res {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+  }
+
+  /* Model health */
+  .health-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .health-stat {
+    text-align: center;
+    padding: 10px 4px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+  }
+  .health-stat .stat-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .health-stat .stat-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-top: 2px;
+  }
+
+  /* ── Input bar ── */
+  .input-bar {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .input-wrapper {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+  }
+  #nl-input {
+    flex: 1;
+    min-height: 44px;
+    max-height: 160px;
+    resize: none;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-size: 14px;
+    font-family: var(--font);
+    padding: 10px 14px;
+    line-height: 1.5;
+    transition: border-color var(--transition);
+  }
+  #nl-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-subtle); }
+  #nl-input::placeholder { color: var(--text-tertiary); }
+  .send-btn {
+    width: 44px;
+    height: 44px;
+    border: none;
+    background: var(--accent);
+    color: white;
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+    flex-shrink: 0;
+  }
+  .send-btn:hover { background: #1d4ed8; }
+  .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .send-btn svg { width: 18px; height: 18px; }
+  .input-hint {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 6px;
+  }
+
+  /* Loading state */
+  .loading-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: var(--shadow-sm);
+  }
+  .loading-dots { display: flex; gap: 4px; }
+  .loading-dots span {
+    width: 7px;
+    height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce {
+    0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+  }
+  .loading-text { font-size: 13px; color: var(--text-secondary); }
+
+  /* ── Right: Code + Validation ── */
+  .right-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .code-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 40px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .code-header .tab {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    padding: 8px 0;
+    border-bottom: 2px solid var(--accent);
+    color: var(--accent);
+  }
+  .code-header .meta {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    display: flex;
+    gap: 12px;
+  }
+  .code-header .meta .valid { color: var(--green); font-weight: 500; }
+  .code-header .meta .invalid { color: var(--red); font-weight: 500; }
+
+  #sysml-editor {
+    flex: 1;
+    width: 100%;
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+    padding: 16px 20px;
+    border: none;
+    resize: none;
+    tab-size: 4;
+  }
+  #sysml-editor:focus { outline: none; }
+  #sysml-editor::placeholder { color: var(--text-tertiary); }
+
+  /* Validation panel */
+  .validation-panel {
+    height: 180px;
+    min-height: 100px;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+  .validation-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    height: 36px;
+    border-bottom: 1px solid var(--border-subtle);
+    flex-shrink: 0;
+  }
+  .validation-header .title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--text-tertiary);
+  }
+  .validation-counts {
+    display: flex;
+    gap: 12px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .validation-counts .err { color: var(--red); }
+  .validation-counts .warn { color: var(--yellow); }
+  .validation-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 20px;
+  }
+  .diag-row {
+    display: flex;
+    gap: 10px;
+    padding: 5px 0;
+    font-size: 12px;
+    font-family: var(--mono);
+    align-items: baseline;
+  }
+  .diag-sev {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .sev-error { background: var(--red-bg); color: var(--red); }
+  .sev-warning { background: var(--yellow-bg); color: var(--yellow); }
+  .diag-loc { color: var(--accent); flex-shrink: 0; }
+  .diag-msg { color: var(--text-secondary); }
+  .no-issues {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    padding: 16px 0;
+    text-align: center;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/>
+        <line x1="12" y1="22" x2="12" y2="15.5"/>
+        <polyline points="22 8.5 12 15.5 2 8.5"/>
+      </svg>
+    </div>
+    <h1>EngineeringOS <span class="version">v0.1</span></h1>
+  </div>
+  <div class="header-actions">
+    <button class="btn" onclick="downloadModel()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export
+    </button>
+    <button class="btn" onclick="revalidate()">Validate</button>
+    <button class="btn danger" onclick="resetModel()">Reset</button>
+  </div>
+</header>
+
+<div class="main">
+  <div class="left-panel">
+    <div class="agent-feed" id="agent-feed">
+      <div class="welcome-card" id="welcome">
+        <h2>Start building your hardware model</h2>
+        <p>Describe your hardware system in plain English. I'll translate it to SysMLv2, validate it, and ask you the right questions to fill in the gaps.</p>
+        <div class="hints">
+          <button class="hint-chip" onclick="useHint(this)">"I'm building a quadcopter drone with 4 brushless motors, a carbon fiber frame, and a flight controller"</button>
+          <button class="hint-chip" onclick="useHint(this)">"The system is a smart thermostat with a temperature sensor, display, WiFi module, and relay switch"</button>
+          <button class="hint-chip" onclick="useHint(this)">"I need a battery management system with cell balancing, voltage monitoring, and overcurrent protection"</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="input-bar">
+      <div class="input-wrapper">
+        <textarea id="nl-input" rows="1" placeholder="Describe your hardware…"></textarea>
+        <button class="send-btn" id="send-btn" onclick="submitInput()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="input-hint">Press <strong>Ctrl+Enter</strong> to send · Click questions to answer them</div>
+    </div>
+  </div>
+
+  <div class="right-panel">
+    <div class="code-area">
+      <div class="code-header">
+        <span class="tab">model.sysml</span>
+        <div class="meta">
+          <span id="symbol-count">0 symbols</span>
+          <span id="valid-status" class="valid">—</span>
+        </div>
+      </div>
+      <textarea id="sysml-editor" spellcheck="false" placeholder="// Your SysMLv2 model will appear here…"></textarea>
+    </div>
+
+    <div class="validation-panel">
+      <div class="validation-header">
+        <span class="title">Diagnostics</span>
+        <div class="validation-counts">
+          <span class="err" id="err-count">0 errors</span>
+          <span class="warn" id="warn-count">0 warnings</span>
+        </div>
+      </div>
+      <div class="validation-body" id="diagnostics">
+        <div class="no-issues">No diagnostics yet</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const feed = document.getElementById('agent-feed');
+const nlInput = document.getElementById('nl-input');
+const sendBtn = document.getElementById('send-btn');
+const editor = document.getElementById('sysml-editor');
+const diagnosticsDiv = document.getElementById('diagnostics');
+
+// Auto-resize textarea
+nlInput.addEventListener('input', () => {
+  nlInput.style.height = 'auto';
+  nlInput.style.height = Math.min(nlInput.scrollHeight, 160) + 'px';
+});
+
+function useHint(el) {
+  nlInput.value = el.textContent.replace(/^"|"$/g, '');
+  nlInput.focus();
+  nlInput.dispatchEvent(new Event('input'));
+}
+
+async function submitInput() {
+  const text = nlInput.value.trim();
+  if (!text) return;
+
+  // Remove welcome card
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.remove();
+
+  // Add user message
+  const userMsg = document.createElement('div');
+  userMsg.className = 'msg-user';
+  userMsg.textContent = text;
+  feed.appendChild(userMsg);
+
+  // Add loading
+  const loading = document.createElement('div');
+  loading.className = 'loading-card';
+  loading.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div><span class="loading-text">Analyzing and updating model…</span>';
+  feed.appendChild(loading);
+  feed.scrollTop = feed.scrollHeight;
+
+  nlInput.value = '';
+  nlInput.style.height = 'auto';
+  sendBtn.disabled = true;
+
+  try {
+    const res = await fetch('/api/add', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({input: text}),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || 'Server error');
+    }
+    const data = await res.json();
+    loading.remove();
+
+    // Update code editor
+    editor.value = data.sysml;
+
+    // Render validation
+    renderValidation(data.validation);
+
+    // Render agent card
+    renderAgentCard(data.analysis, data.validation);
+
+    feed.scrollTop = feed.scrollHeight;
+  } catch (e) {
+    loading.remove();
+    const errDiv = document.createElement('div');
+    errDiv.className = 'conflict-item';
+    errDiv.innerHTML = `<div class="conflict-desc">Error: ${esc(e.message)}</div>`;
+    feed.appendChild(errDiv);
+    feed.scrollTop = feed.scrollHeight;
+  } finally {
+    sendBtn.disabled = false;
+  }
+}
+
+function renderAgentCard(analysis, validation) {
+  const card = document.createElement('div');
+  card.className = 'agent-card';
+
+  const hasConflicts = analysis.conflicts && analysis.conflicts.length > 0;
+
+  let html = `
+    <div class="agent-card-header">
+      <div class="agent-avatar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg>
+      </div>
+      <span>EngineeringOS</span>
+      <span class="label ${hasConflicts ? 'label-conflict' : 'label-updated'}">${hasConflicts ? 'Conflicts' : 'Updated'}</span>
+    </div>
+    <div class="agent-card-body">
+  `;
+
+  // Summary
+  if (analysis.summary) {
+    html += `<div class="summary">${esc(analysis.summary)}</div>`;
+  }
+
+  // Completeness
+  if (typeof analysis.completeness === 'number') {
+    const pct = analysis.completeness;
+    html += `
+      <div class="completeness">
+        <div class="completeness-header">
+          <span>Model Completeness</span>
+          <span>${pct}%</span>
+        </div>
+        <div class="completeness-bar">
+          <div class="completeness-fill" style="width:${pct}%"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Model health
+  const h = analysis.model_health || {};
+  if (Object.keys(h).length > 0) {
+    html += `
+      <div class="health-grid">
+        <div class="health-stat"><div class="stat-value">${h.parts_defined || 0}</div><div class="stat-label">Parts</div></div>
+        <div class="health-stat"><div class="stat-value">${h.requirements_defined || 0}</div><div class="stat-label">Reqs</div></div>
+        <div class="health-stat"><div class="stat-value">${h.interfaces_defined || 0}</div><div class="stat-label">Ports</div></div>
+        <div class="health-stat"><div class="stat-value">${h.constraints_defined || 0}</div><div class="stat-label">Constraints</div></div>
+      </div>
+    `;
+  }
+
+  // Conflicts
+  if (hasConflicts) {
+    html += `<div class="questions-section"><div class="section-label">Conflicts Detected</div>`;
+    analysis.conflicts.forEach(c => {
+      html += `
+        <div class="conflict-item">
+          <div class="conflict-desc">${esc(c.description)}</div>
+          <div class="conflict-res">Resolution: ${esc(c.resolution)}</div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+
+  // Questions
+  if (analysis.questions && analysis.questions.length > 0) {
+    html += `<div class="questions-section"><div class="section-label">Questions for You</div>`;
+    analysis.questions.forEach(q => {
+      const p = q.priority || 'medium';
+      html += `
+        <div class="question-item" onclick="answerQuestion(this)">
+          <div class="question-priority priority-${p}"></div>
+          <div class="question-content">
+            <div class="q-text">${esc(q.question)}</div>
+            ${q.context ? `<div class="q-context">${esc(q.context)}</div>` : ''}
+          </div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+
+  // Suggestions
+  if (analysis.suggestions && analysis.suggestions.length > 0) {
+    html += `<div class="questions-section"><div class="section-label">Suggested Next Steps</div>`;
+    analysis.suggestions.forEach(s => {
+      html += `<div class="suggestion-item" onclick="useSuggestion(this)">${esc(s)}</div>`;
+    });
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  card.innerHTML = html;
+  feed.appendChild(card);
+}
+
+function answerQuestion(el) {
+  const qText = el.querySelector('.q-text').textContent;
+  nlInput.value = '';
+  nlInput.focus();
+  nlInput.placeholder = `Answering: "${qText.substring(0, 60)}…"`;
+}
+
+function useSuggestion(el) {
+  // Get the text content without the arrow prefix
+  const text = el.textContent.replace(/^→\s*/, '').trim();
+  nlInput.value = text;
+  nlInput.focus();
+  nlInput.dispatchEvent(new Event('input'));
+}
+
+function renderValidation(v) {
+  if (!v) return;
+  document.getElementById('err-count').textContent = `${v.error_count} error${v.error_count!==1?'s':''}`;
+  document.getElementById('warn-count').textContent = `${v.warning_count} warning${v.warning_count!==1?'s':''}`;
+
+  const syms = Object.keys(v.symbols || {}).length;
+  document.getElementById('symbol-count').textContent = `${syms} symbol${syms!==1?'s':''}`;
+
+  const statusEl = document.getElementById('valid-status');
+  if (v.valid) {
+    statusEl.textContent = 'Valid';
+    statusEl.className = 'valid';
+  } else {
+    statusEl.textContent = 'Invalid';
+    statusEl.className = 'invalid';
+  }
+
+  if (v.diagnostics.length === 0) {
+    diagnosticsDiv.innerHTML = '<div class="no-issues">All clear</div>';
+    return;
+  }
+  diagnosticsDiv.innerHTML = v.diagnostics.map(d => `
+    <div class="diag-row">
+      <span class="diag-sev sev-${d.severity}">${d.severity}</span>
+      <span class="diag-loc">L${d.line}:${d.col}</span>
+      <span class="diag-msg">${esc(d.message)}</span>
+    </div>
+  `).join('');
+}
+
+async function revalidate() {
+  const source = editor.value;
+  try {
+    const res = await fetch('/api/validate', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({source}),
+    });
+    const data = await res.json();
+    renderValidation(data.validation);
+  } catch(e) {}
+}
+
+async function resetModel() {
+  if (!confirm('Reset the entire model?')) return;
+  await fetch('/api/reset', {method: 'POST'});
+  editor.value = '';
+  diagnosticsDiv.innerHTML = '<div class="no-issues">No diagnostics yet</div>';
+  document.getElementById('err-count').textContent = '0 errors';
+  document.getElementById('warn-count').textContent = '0 warnings';
+  document.getElementById('symbol-count').textContent = '0 symbols';
+  document.getElementById('valid-status').textContent = '—';
+  feed.innerHTML = `
+    <div class="welcome-card" id="welcome">
+      <h2>Start building your hardware model</h2>
+      <p>Describe your hardware system in plain English. I'll translate it to SysMLv2, validate it, and ask you the right questions to fill in the gaps.</p>
+      <div class="hints">
+        <button class="hint-chip" onclick="useHint(this)">"I'm building a quadcopter drone with 4 brushless motors, a carbon fiber frame, and a flight controller"</button>
+        <button class="hint-chip" onclick="useHint(this)">"The system is a smart thermostat with a temperature sensor, display, WiFi module, and relay switch"</button>
+        <button class="hint-chip" onclick="useHint(this)">"I need a battery management system with cell balancing, voltage monitoring, and overcurrent protection"</button>
+      </div>
+    </div>
+  `;
+}
+
+function downloadModel() {
+  const source = editor.value;
+  if (!source) return;
+  const blob = new Blob([source], {type: 'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'model.sysml';
+  a.click();
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+
+// Ctrl+Enter to send
+nlInput.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    submitInput();
+  }
+});
+
+// Tab in editor
+editor.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    const s = editor.selectionStart, end = editor.selectionEnd;
+    editor.value = editor.value.substring(0,s) + '    ' + editor.value.substring(end);
+    editor.selectionStart = editor.selectionEnd = s + 4;
+  }
+});
+</script>
+</body>
+</html>
